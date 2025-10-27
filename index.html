@@ -44,8 +44,8 @@
   <label>Certificate File (pdf/png/jpg/json/txt)</label>
   <input id="a_file" type="file" accept=".pdf,.png,.jpg,.jpeg,.json,.txt">
 
-  <label>Or Content Text (used if no file)</label>
-  <textarea id="a_text" placeholder='{"name":"Alice",...}' rows="5"></textarea>
+  <!-- <label>Or Content Text (used if no file)</label> -->
+  <!-- <textarea id="a_text" placeholder='{"name":"Alice",...}' rows="5"></textarea> -->
 
   <label>Computed Certificate ID</label>
   <input id="a_certId" readonly placeholder="Computed after Hash & ID">
@@ -184,7 +184,7 @@
         year: document.getElementById("a_year"),
         issuer: document.getElementById("a_issuer"),
         file: document.getElementById("a_file"),
-        text: document.getElementById("a_text"),
+        // text: document.getElementById("a_text"),
         certId: document.getElementById("a_certId"),
         contentHash: document.getElementById("a_contentHash"),
         compute: document.getElementById("a_compute"),

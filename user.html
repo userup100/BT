@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8">
   <title>Certificate Verification dApp - User</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="./styles.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="styles.css">
   <style>
     body { font-family: Arial, sans-serif; margin: 1rem; }
     .btn { padding: 0.5rem 1rem; margin: 0.25rem 0; cursor: pointer; }
@@ -21,32 +21,33 @@
   <h1>User Verification Panel - Certificate Verification dApp</h1>
 
   <label>Holder Name</label>
-  <input id="u_holderName" placeholder="Sai Raj" />
+  <input id="u_holderName" placeholder="Sai Raj">
 
   <label>Roll No</label>
-  <input id="u_rollNo" placeholder="260" />
+  <input id="u_rollNo" placeholder="260">
 
   <label>Course</label>
-  <input id="u_course" placeholder="B.E. Computer" />
+  <input id="u_course" placeholder="B.E. Computer">
 
   <label>Year</label>
-  <input id="u_year" type="number" value="2025" />
+  <input id="u_year" type="number" value="2025">
 
   <label>Issuer (owner address)</label>
-  <input id="u_issuer" placeholder="0x..." />
+  <input id="u_issuer" placeholder="0x...">
 
   <label>Certificate File (pdf/png/jpg/json/txt)</label>
-  <input id="u_file" type="file" accept=".pdf,.png,.jpg,.jpeg,.json,.txt" />
+  <input id="u_file" type="file" accept=".pdf,.png,.jpg,.jpeg,.json,.txt">
 
+  <!-- <label>Or Content Text (used if no file)</label> -->
   <!-- <textarea id="u_text" placeholder='{"name":"Alice",...}' rows="5"></textarea> -->
 
   <button id="u_compute" class="btn">Compute ID & Hash</button>
 
   <label>Certificate ID</label>
-  <input id="u_certId" placeholder="0x... (auto if computed)" readonly />
+  <input id="u_certId" placeholder="0x... (auto if computed)">
 
   <label>Content Hash</label>
-  <input id="u_contentHash" placeholder="0x... (auto if computed)" readonly />
+  <input id="u_contentHash" placeholder="0x... (auto if computed)">
 
   <button id="u_verify" class="btn primary">Verify</button>
 
@@ -56,101 +57,283 @@
 
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <script>
-    (function () {
+    (async () => {
       const { ethers } = window;
 
-      const CONTRACT_ADDRESS = "0x04e301F256C83272F275629d048749658F35CB71";
-      const CONTRACT_ABI = [ /* same ABI as before */ 
-        {
-          "inputs": [
-            { "internalType": "bytes32", "name": "id", "type": "bytes32" },
-            { "internalType": "string", "name": "holderName", "type": "string" },
-            { "internalType": "string", "name": "course", "type": "string" },
-            { "internalType": "uint32", "name": "year", "type": "uint32" },
-            { "internalType": "bytes32", "name": "contentHash", "type": "bytes32" }
-          ],
-          "name": "createCertificate", "outputs": [], "stateMutability": "nonpayable", "type": "function"
-        },
-        {
-          "inputs": [{ "internalType": "bytes32", "name": "id", "type": "bytes32" }],
-          "name": "deleteCertificate", "outputs": [], "stateMutability": "nonpayable", "type": "function"
-        },
-        {
-          "inputs": [
-            { "internalType": "bytes32", "name": "id", "type": "bytes32" },
-            { "internalType": "bool", "name": "status", "type": "bool" }
-          ],
-          "name": "revokeCertificate", "outputs": [], "stateMutability": "nonpayable", "type": "function"
-        },
-        {"inputs": [], "stateMutability": "nonpayable", "type": "constructor"},
-        {
-          "anonymous": false,
-          "inputs": [
-            { "indexed": true, "internalType": "bytes32", "name": "id", "type": "bytes32" },
-            { "indexed": true, "internalType": "address", "name": "issuer", "type": "address" }
-          ],
-          "name": "Created", "type": "event"
-        },
-        {
-          "anonymous": false,
-          "inputs": [{ "indexed": true, "internalType": "bytes32", "name": "id", "type": "bytes32" }],
-          "name": "Deleted", "type": "event"
-        },
-        {
-          "anonymous": false,
-          "inputs": [
-            { "indexed": true, "internalType": "bytes32", "name": "id", "type": "bytes32" },
-            { "indexed": false, "internalType": "bool", "name": "status", "type": "bool" }
-          ],
-          "name": "Revoked", "type": "event"
-        },
-        {
-          "inputs": [
-            { "internalType": "bytes32", "name": "id", "type": "bytes32" },
-            { "internalType": "string", "name": "holderName", "type": "string" },
-            { "internalType": "string", "name": "course", "type": "string" },
-            { "internalType": "uint32", "name": "year", "type": "uint32" },
-            { "internalType": "bytes32", "name": "contentHash", "type": "bytes32" }
-          ],
-          "name": "updateCertificate", "outputs": [], "stateMutability": "nonpayable", "type": "function"
-        },
-        {
-          "anonymous": false,
-          "inputs": [{ "indexed": true, "internalType": "bytes32", "name": "id", "type": "bytes32" }],
-          "name": "Updated", "type": "event"
-        }
-      ];
-
-      const REQUIRED_CHAIN_ID = "0xAA36A7"; // Sepolia
+      const CONTRACT_ADDRESS = "0xd0d409F68DE81b314612474bf10e0Cf98252e91a";
+      const CONTRACT_ABI = [
+	{
+		"inputs": [],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "bytes32",
+				"name": "id",
+				"type": "bytes32"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "issuer",
+				"type": "address"
+			}
+		],
+		"name": "Created",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "bytes32",
+				"name": "id",
+				"type": "bytes32"
+			}
+		],
+		"name": "Deleted",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "bytes32",
+				"name": "id",
+				"type": "bytes32"
+			},
+			{
+				"indexed": false,
+				"internalType": "bool",
+				"name": "status",
+				"type": "bool"
+			}
+		],
+		"name": "Revoked",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "bytes32",
+				"name": "id",
+				"type": "bytes32"
+			}
+		],
+		"name": "Updated",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bytes32",
+				"name": "id",
+				"type": "bytes32"
+			},
+			{
+				"internalType": "string",
+				"name": "holderName",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "course",
+				"type": "string"
+			},
+			{
+				"internalType": "uint32",
+				"name": "year",
+				"type": "uint32"
+			},
+			{
+				"internalType": "bytes32",
+				"name": "contentHash",
+				"type": "bytes32"
+			}
+		],
+		"name": "createCertificate",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bytes32",
+				"name": "id",
+				"type": "bytes32"
+			}
+		],
+		"name": "deleteCertificate",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bytes32",
+				"name": "id",
+				"type": "bytes32"
+			}
+		],
+		"name": "getCertificateCore",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "issuer",
+				"type": "address"
+			},
+			{
+				"internalType": "uint32",
+				"name": "year",
+				"type": "uint32"
+			},
+			{
+				"internalType": "bytes32",
+				"name": "contentHash",
+				"type": "bytes32"
+			},
+			{
+				"internalType": "bool",
+				"name": "revoked",
+				"type": "bool"
+			},
+			{
+				"internalType": "bool",
+				"name": "present",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bytes32",
+				"name": "id",
+				"type": "bytes32"
+			}
+		],
+		"name": "getCertificateText",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "holderName",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "course",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "owner",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bytes32",
+				"name": "id",
+				"type": "bytes32"
+			},
+			{
+				"internalType": "bool",
+				"name": "status",
+				"type": "bool"
+			}
+		],
+		"name": "revokeCertificate",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bytes32",
+				"name": "id",
+				"type": "bytes32"
+			},
+			{
+				"internalType": "string",
+				"name": "holderName",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "course",
+				"type": "string"
+			},
+			{
+				"internalType": "uint32",
+				"name": "year",
+				"type": "uint32"
+			},
+			{
+				"internalType": "bytes32",
+				"name": "contentHash",
+				"type": "bytes32"
+			}
+		],
+		"name": "updateCertificate",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bytes32",
+				"name": "id",
+				"type": "bytes32"
+			},
+			{
+				"internalType": "bytes32",
+				"name": "contentHash",
+				"type": "bytes32"
+			}
+		],
+		"name": "verify",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+];
 
       let provider, contractRead;
 
-      const elems = {
-        holderName: document.getElementById("u_holderName"),
-        rollNo: document.getElementById("u_rollNo"),
-        course: document.getElementById("u_course"),
-        year: document.getElementById("u_year"),
-        issuer: document.getElementById("u_issuer"),
-        file: document.getElementById("u_file"),
-        compute: document.getElementById("u_compute"),
-        certId: document.getElementById("u_certId"),
-        contentHash: document.getElementById("u_contentHash"),
-        verifyBtn: document.getElementById("u_verify"),
-        result: document.getElementById("u_result"),
-        log: document.getElementById("u_log"),
-      };
-
-      async function initProvider() {
-        if (!window.ethereum) {
-          alert("MetaMask required. Please install MetaMask.");
-          throw new Error("MetaMask not found");
-        }
-        await window.ethereum.request({ method: "eth_requestAccounts" });
-        const chainId = await window.ethereum.request({ method: "eth_chainId" });
-        if (chainId !== REQUIRED_CHAIN_ID) {
-          alert("Please switch MetaMask to Sepolia testnet.");
-          throw new Error("Incorrect network");
-        }
+      async function ensureProvider() {
+        if (!window.ethereum) throw new Error("MetaMask not found");
         provider = new ethers.providers.Web3Provider(window.ethereum);
         contractRead = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
       }
@@ -176,31 +359,42 @@
         });
       }
 
+      const elems = {
+        holderName: document.getElementById("u_holderName"),
+        rollNo: document.getElementById("u_rollNo"),
+        course: document.getElementById("u_course"),
+        year: document.getElementById("u_year"),
+        issuer: document.getElementById("u_issuer"),
+        file: document.getElementById("u_file"),
+        // text: document.getElementById("u_text"),
+        compute: document.getElementById("u_compute"),
+        certId: document.getElementById("u_certId"),
+        contentHash: document.getElementById("u_contentHash"),
+        verifyBtn: document.getElementById("u_verify"),
+        result: document.getElementById("u_result"),
+        log: document.getElementById("u_log"),
+      };
+
       elems.compute.addEventListener("click", async () => {
         try {
           let cHash;
+
           if (elems.file.files.length > 0) {
             const fileBuffer = await readFileAsArrayBuffer(elems.file.files[0]);
             cHash = ethers.utils.keccak256(new Uint8Array(fileBuffer));
+          } else if (elems.text.value.trim()) {
+            cHash = hashText(elems.text.value.trim());
           } else {
-            cHash = hashText(
-              JSON.stringify({
-                holderName: elems.holderName.value,
-                rollNo: elems.rollNo.value,
-                course: elems.course.value,
-                year: Number(elems.year.value),
-                issuer: elems.issuer.value,
-              })
-            );
+            cHash = hashText(JSON.stringify({
+              holderName: elems.holderName.value,
+              rollNo: elems.rollNo.value,
+              course: elems.course.value,
+              year: Number(elems.year.value),
+              issuer: elems.issuer.value
+            }));
           }
 
-          const id = buildCertId(
-            elems.holderName.value,
-            elems.rollNo.value,
-            elems.course.value,
-            elems.year.value,
-            elems.issuer.value
-          );
+          const id = buildCertId(elems.holderName.value, elems.rollNo.value, elems.course.value, elems.year.value, elems.issuer.value);
 
           elems.certId.value = id;
           elems.contentHash.value = cHash;
@@ -212,25 +406,20 @@
 
       elems.verifyBtn.addEventListener("click", async () => {
         try {
-          await initProvider();
-          const result = await contractRead.verify(elems.certId.value, elems.contentHash.value);
-          elems.result.textContent = result ? "Result: VALID" : "Result: INVALID";
-          elems.result.className = result ? "badge ok" : "badge fail";
+          await ensureProvider();
+          const ok = await contractRead.verify(elems.certId.value, elems.contentHash.value);
+          elems.result.textContent = ok ? "Result: VALID" : "Result: INVALID";
+          elems.result.className = ok ? "badge ok" : "badge fail";
 
           const core = await contractRead.getCertificateCore(elems.certId.value);
           const text = await contractRead.getCertificateText(elems.certId.value);
-          elems.log.textContent = `
-Verify: ${result}
-Present: ${core.present}
-Revoked: ${core.revoked}
-Issuer: ${core.issuer}
-Name: ${text.holderName}
-Course: ${text.course}
-          `;
+          elems.log.textContent = `Verify: ${ok}\nPresent: ${core.present}\nRevoked: ${core.revoked}\nIssuer: ${core.issuer}\nName: ${text.holderName}\nCourse: ${text.course}`;
         } catch (e) {
           elems.log.textContent = `Verify error: ${e.message}`;
         }
       });
+
+      await ensureProvider().catch(() => { });
     })();
   </script>
 </body>
