@@ -55,282 +55,73 @@
   <pre id="u_log" class="log"></pre>
 
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-
   <script>
     (function () {
       const { ethers } = window;
 
-      const CONTRACT_ADDRESS = "0x04e301F256C83272F275629d048749658F35CB71"; // Your deployed address
-      const CONTRACT_ABI = [
-	{
-		"inputs": [],
-		"stateMutability": "nonpayable",
-		"type": "constructor"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "bytes32",
-				"name": "id",
-				"type": "bytes32"
-			},
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "issuer",
-				"type": "address"
-			}
-		],
-		"name": "Created",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "bytes32",
-				"name": "id",
-				"type": "bytes32"
-			}
-		],
-		"name": "Deleted",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "bytes32",
-				"name": "id",
-				"type": "bytes32"
-			},
-			{
-				"indexed": false,
-				"internalType": "bool",
-				"name": "status",
-				"type": "bool"
-			}
-		],
-		"name": "Revoked",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "bytes32",
-				"name": "id",
-				"type": "bytes32"
-			}
-		],
-		"name": "Updated",
-		"type": "event"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bytes32",
-				"name": "id",
-				"type": "bytes32"
-			},
-			{
-				"internalType": "string",
-				"name": "holderName",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
-				"name": "course",
-				"type": "string"
-			},
-			{
-				"internalType": "uint32",
-				"name": "year",
-				"type": "uint32"
-			},
-			{
-				"internalType": "bytes32",
-				"name": "contentHash",
-				"type": "bytes32"
-			}
-		],
-		"name": "createCertificate",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bytes32",
-				"name": "id",
-				"type": "bytes32"
-			}
-		],
-		"name": "deleteCertificate",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bytes32",
-				"name": "id",
-				"type": "bytes32"
-			}
-		],
-		"name": "getCertificateCore",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "issuer",
-				"type": "address"
-			},
-			{
-				"internalType": "uint32",
-				"name": "year",
-				"type": "uint32"
-			},
-			{
-				"internalType": "bytes32",
-				"name": "contentHash",
-				"type": "bytes32"
-			},
-			{
-				"internalType": "bool",
-				"name": "revoked",
-				"type": "bool"
-			},
-			{
-				"internalType": "bool",
-				"name": "present",
-				"type": "bool"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bytes32",
-				"name": "id",
-				"type": "bytes32"
-			}
-		],
-		"name": "getCertificateText",
-		"outputs": [
-			{
-				"internalType": "string",
-				"name": "holderName",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
-				"name": "course",
-				"type": "string"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "owner",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bytes32",
-				"name": "id",
-				"type": "bytes32"
-			},
-			{
-				"internalType": "bool",
-				"name": "status",
-				"type": "bool"
-			}
-		],
-		"name": "revokeCertificate",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bytes32",
-				"name": "id",
-				"type": "bytes32"
-			},
-			{
-				"internalType": "string",
-				"name": "holderName",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
-				"name": "course",
-				"type": "string"
-			},
-			{
-				"internalType": "uint32",
-				"name": "year",
-				"type": "uint32"
-			},
-			{
-				"internalType": "bytes32",
-				"name": "contentHash",
-				"type": "bytes32"
-			}
-		],
-		"name": "updateCertificate",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bytes32",
-				"name": "id",
-				"type": "bytes32"
-			},
-			{
-				"internalType": "bytes32",
-				"name": "contentHash",
-				"type": "bytes32"
-			}
-		],
-		"name": "verify",
-		"outputs": [
-			{
-				"internalType": "bool",
-				"name": "",
-				"type": "bool"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	}
-];
+      const CONTRACT_ADDRESS = "0x04e301F256C83272F275629d048749658F35CB71";
+      const CONTRACT_ABI = [ /* same ABI as before */ 
+        {
+          "inputs": [
+            { "internalType": "bytes32", "name": "id", "type": "bytes32" },
+            { "internalType": "string", "name": "holderName", "type": "string" },
+            { "internalType": "string", "name": "course", "type": "string" },
+            { "internalType": "uint32", "name": "year", "type": "uint32" },
+            { "internalType": "bytes32", "name": "contentHash", "type": "bytes32" }
+          ],
+          "name": "createCertificate", "outputs": [], "stateMutability": "nonpayable", "type": "function"
+        },
+        {
+          "inputs": [{ "internalType": "bytes32", "name": "id", "type": "bytes32" }],
+          "name": "deleteCertificate", "outputs": [], "stateMutability": "nonpayable", "type": "function"
+        },
+        {
+          "inputs": [
+            { "internalType": "bytes32", "name": "id", "type": "bytes32" },
+            { "internalType": "bool", "name": "status", "type": "bool" }
+          ],
+          "name": "revokeCertificate", "outputs": [], "stateMutability": "nonpayable", "type": "function"
+        },
+        {"inputs": [], "stateMutability": "nonpayable", "type": "constructor"},
+        {
+          "anonymous": false,
+          "inputs": [
+            { "indexed": true, "internalType": "bytes32", "name": "id", "type": "bytes32" },
+            { "indexed": true, "internalType": "address", "name": "issuer", "type": "address" }
+          ],
+          "name": "Created", "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [{ "indexed": true, "internalType": "bytes32", "name": "id", "type": "bytes32" }],
+          "name": "Deleted", "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            { "indexed": true, "internalType": "bytes32", "name": "id", "type": "bytes32" },
+            { "indexed": false, "internalType": "bool", "name": "status", "type": "bool" }
+          ],
+          "name": "Revoked", "type": "event"
+        },
+        {
+          "inputs": [
+            { "internalType": "bytes32", "name": "id", "type": "bytes32" },
+            { "internalType": "string", "name": "holderName", "type": "string" },
+            { "internalType": "string", "name": "course", "type": "string" },
+            { "internalType": "uint32", "name": "year", "type": "uint32" },
+            { "internalType": "bytes32", "name": "contentHash", "type": "bytes32" }
+          ],
+          "name": "updateCertificate", "outputs": [], "stateMutability": "nonpayable", "type": "function"
+        },
+        {
+          "anonymous": false,
+          "inputs": [{ "indexed": true, "internalType": "bytes32", "name": "id", "type": "bytes32" }],
+          "name": "Updated", "type": "event"
+        }
+      ];
 
-      const REQUIRED_CHAIN_ID = "0xAA36A7"; // Example: Sepolia testnet chain id (hex). Please update to your network!
+      const REQUIRED_CHAIN_ID = "0xAA36A7"; // Sepolia
 
       let provider, contractRead;
 
@@ -351,14 +142,14 @@
 
       async function initProvider() {
         if (!window.ethereum) {
-          alert("MetaMask is required. Please install it from https://metamask.io/");
+          alert("MetaMask required. Please install MetaMask.");
           throw new Error("MetaMask not found");
         }
         await window.ethereum.request({ method: "eth_requestAccounts" });
-        const currentChainId = await window.ethereum.request({ method: "eth_chainId" });
-        if (currentChainId !== REQUIRED_CHAIN_ID) {
-          alert("Please switch your MetaMask network to the expected network.");
-          throw new Error("Incorrect MetaMask network");
+        const chainId = await window.ethereum.request({ method: "eth_chainId" });
+        if (chainId !== REQUIRED_CHAIN_ID) {
+          alert("Please switch MetaMask to Sepolia testnet.");
+          throw new Error("Incorrect network");
         }
         provider = new ethers.providers.Web3Provider(window.ethereum);
         contractRead = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
@@ -422,18 +213,20 @@
       elems.verifyBtn.addEventListener("click", async () => {
         try {
           await initProvider();
-          const ok = await contractRead.verify(elems.certId.value, elems.contentHash.value);
-          elems.result.textContent = ok ? "Result: VALID" : "Result: INVALID";
-          elems.result.className = ok ? "badge ok" : "badge fail";
+          const result = await contractRead.verify(elems.certId.value, elems.contentHash.value);
+          elems.result.textContent = result ? "Result: VALID" : "Result: INVALID";
+          elems.result.className = result ? "badge ok" : "badge fail";
 
           const core = await contractRead.getCertificateCore(elems.certId.value);
           const text = await contractRead.getCertificateText(elems.certId.value);
-          elems.log.textContent = `Verify: ${ok}
+          elems.log.textContent = `
+Verify: ${result}
 Present: ${core.present}
 Revoked: ${core.revoked}
 Issuer: ${core.issuer}
 Name: ${text.holderName}
-Course: ${text.course}`;
+Course: ${text.course}
+          `;
         } catch (e) {
           elems.log.textContent = `Verify error: ${e.message}`;
         }
