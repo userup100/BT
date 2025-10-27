@@ -1,0 +1,124 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+contract CertificateVerifier {
+    // Owner/admin
+    address public owner;
+
+    // Certificate struct
+    struct Cert {
+        address issuer;         // who created/owns this certificate entry
+        string holderName;      // candidate / student name
+        string course;          // course / program
+        uint32 year;            // issue year
+        bytes32 contentHash;    // keccak256 hash of certificate content/file
+        bool revoked;           // soft delete / revoke flag
+    }
+
+    // Storage
+    mapping(bytes32 => Cert) private certificates;
+    mapping(bytes32 => bool) private exists;
+
+    // Events
+    event Created(bytes32 indexed id, address indexed issuer);
+    event Updated(bytes32 indexed id);
+    event Revoked(bytes32 indexed id, bool status);
+    event Deleted(bytes32 indexed id);
+
+    // Modifiers
+    modifier onlyOwner() {
+        require(msg.sender == owner, "not owner");
+        _;
+    }
+
+    constructor() {
+        owner = msg.sender;
+    }
+
+    // Admin: create certificate
+    function createCertificate(
+        bytes32 id,
+        string calldata holderName,
+        string calldata course,
+        uint32 year,
+        bytes32 contentHash
+    ) external onlyOwner {
+        require(!exists[id], "id exists");
+        certificates[id] = Cert({
+            issuer: msg.sender,
+            holderName: holderName,
+            course: course,
+            year: year,
+            contentHash: contentHash,
+            revoked: false
+        });
+        exists[id] = true;
+        emit Created(id, msg.sender);
+    }
+
+    // Admin: update certificate (only if not revoked)
+    function updateCertificate(
+        bytes32 id,
+        string calldata holderName,
+        string calldata course,
+        uint32 year,
+        bytes32 contentHash
+    ) external onlyOwner {
+        require(exists[id], "id !exists");
+        Cert storage c = certificates[id];
+        require(!c.revoked, "revoked");
+        c.holderName = holderName;
+        c.course = course;
+        c.year = year;
+        c.contentHash = contentHash;
+        emit Updated(id);
+    }
+
+    // Admin: revoke or un-revoke (soft delete)
+    function revokeCertificate(bytes32 id, bool status) external onlyOwner {
+        require(exists[id], "id !exists");
+        certificates[id].revoked = status;
+        emit Revoked(id, status);
+    }
+
+    // Admin: delete (hard delete from storage)
+    function deleteCertificate(bytes32 id) external onlyOwner {
+        require(exists[id], "id !exists");
+        delete certificates[id];
+        exists[id] = false;
+        emit Deleted(id);
+    }
+
+    // Read split getters to avoid "stack too deep"
+    function getCertificateCore(bytes32 id)
+        external
+        view
+        returns (
+            address issuer,
+            uint32 year,
+            bytes32 contentHash,
+            bool revoked,
+            bool present
+        )
+    {
+        Cert storage c = certificates[id];
+        return (c.issuer, c.year, c.contentHash, c.revoked, exists[id]);
+    }
+
+    function getCertificateText(bytes32 id)
+        external
+        view
+        returns (string memory holderName, string memory course)
+    {
+        Cert storage c = certificates[id];
+        return (c.holderName, c.course);
+    }
+
+    // Public verification
+    function verify(bytes32 id, bytes32 contentHash) external view returns (bool) {
+        if (!exists[id]) return false;
+        Cert storage c = certificates[id];
+        if (c.revoked) return false;
+        return c.contentHash == contentHash;
+    }
+}
