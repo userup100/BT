@@ -1,12 +1,11 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   <title>Certificate Verification dApp - Admin</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="./styles.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="./styles.css" />
   <style>
-    /* Basic styling */
     body { font-family: Arial, sans-serif; margin: 1rem; }
     .btn { padding: 0.5rem 1rem; margin: 0.25rem 0; cursor: pointer; }
     .primary { background-color: #007bff; color: white; border: none; }
@@ -25,37 +24,36 @@
   <hr>
 
   <label>Holder Name</label>
-  <input id="a_holderName" placeholder="Sai Raj">
+  <input id="a_holderName" placeholder="Sai Raj" />
 
   <label>Roll No</label>
-  <input id="a_rollNo" placeholder="260">
+  <input id="a_rollNo" placeholder="260" />
 
   <label>Course</label>
-  <input id="a_course" placeholder="B.E. Computer">
+  <input id="a_course" placeholder="B.E. Computer" />
 
   <label>Year</label>
-  <input id="a_year" type="number" value="2025">
+  <input id="a_year" type="number" value="2025" />
 
   <label>Issuer (owner address, leave empty for connected account)</label>
-  <input id="a_issuer" placeholder="0x...">
+  <input id="a_issuer" placeholder="0x..." />
 
   <label>Certificate File (pdf/png/jpg/json/txt)</label>
-  <input id="a_file" type="file" accept=".pdf,.png,.jpg,.jpeg,.json,.txt">
+  <input id="a_file" type="file" accept=".pdf,.png,.jpg,.jpeg,.json,.txt" />
 
-  <!-- <label>Or Content Text (used if no file)</label> -->
   <!-- <textarea id="a_text" placeholder='{"name":"Alice",...}' rows="5"></textarea> -->
 
   <label>Computed Certificate ID</label>
-  <input id="a_certId" readonly placeholder="Computed after Hash & ID">
+  <input id="a_certId" readonly placeholder="Computed after Hash & ID" />
 
   <label>Computed Content Hash</label>
-  <input id="a_contentHash" readonly placeholder="0x...">
+  <input id="a_contentHash" readonly placeholder="0x..." />
 
   <button id="a_compute" class="btn">Compute ID & Hash</button>
 
   <div>
     <button id="a_create" class="btn primary">Create</button>
-    <button id="a_update" class="btn"></button>
+    <button id="a_update" class="btn">Update</button>
     <button id="a_revoke" class="btn warn">Revoke</button>
     <button id="a_unrevoke" class="btn">Unrevoke</button>
     <button id="a_delete" class="btn danger">Delete</button>
@@ -65,10 +63,10 @@
 
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <script>
-    (async () => {
+    (function () {
       const { ethers } = window;
 
-      const CONTRACT_ADDRESS = "0x04e301F256C83272F275629d048749658F35CB71";
+      const CONTRACT_ADDRESS = "0x04e301F256C83272F275629d048749658F35CB71"; // Update with your deployed contract address
       const CONTRACT_ABI = [
 	{
 		"inputs": [],
@@ -338,27 +336,28 @@
 	}
 ];
 
+      const REQUIRED_CHAIN_ID = '0xAA36A7'; // Sepolia testnet chainId (hex)
+
       let provider, signer, signerAddress, contractWrite;
+
+      const connectBtn = document.getElementById("connectBtn");
+      const accountLabel = document.getElementById("accountLabel");
 
       async function ensureProvider() {
         if (!window.ethereum) throw new Error("MetaMask not found");
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+        if (chainId !== REQUIRED_CHAIN_ID) throw new Error("Please switch your MetaMask to Sepolia network");
         provider = new ethers.providers.Web3Provider(window.ethereum);
         signer = provider.getSigner();
         signerAddress = await signer.getAddress();
         contractWrite = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
         accountLabel.textContent = `Connected: ${shorten(signerAddress)}`;
+        console.log("Wallet connected:", signerAddress);
       }
 
-      connectBtn.addEventListener("click", async () => {
-        try {
-          await ensureProvider();
-        } catch (e) {
-          alert("MetaMask is required.");
-        }
-      });
-
       function shorten(addr) {
-        return addr ? addr.slice(0,6) + "..." + addr.slice(-4) : "";
+        return addr ? addr.slice(0, 6) + "..." + addr.slice(-4) : "";
       }
 
       function hashText(text) {
@@ -390,7 +389,6 @@
         year: document.getElementById("a_year"),
         issuer: document.getElementById("a_issuer"),
         file: document.getElementById("a_file"),
-        // text: document.getElementById("a_text"),
         certId: document.getElementById("a_certId"),
         contentHash: document.getElementById("a_contentHash"),
         compute: document.getElementById("a_compute"),
@@ -402,28 +400,41 @@
         log: document.getElementById("a_log"),
       };
 
+      connectBtn.addEventListener("click", async () => {
+        try {
+          await ensureProvider();
+        } catch (e) {
+          alert(e.message);
+        }
+      });
+
       elems.compute.addEventListener("click", async () => {
         try {
           const issuerAddr = elems.issuer.value || signerAddress || "";
 
           let cHash;
-
           if (elems.file.files.length > 0) {
             const fileBuffer = await readFileAsArrayBuffer(elems.file.files[0]);
             cHash = ethers.utils.keccak256(new Uint8Array(fileBuffer));
-          } else if (elems.text.value.trim()) {
-            cHash = hashText(elems.text.value.trim());
           } else {
-            cHash = hashText(JSON.stringify({
-              holderName: elems.holderName.value,
-              rollNo: elems.rollNo.value,
-              course: elems.course.value,
-              year: Number(elems.year.value),
-              issuer: issuerAddr
-            }));
+            cHash = hashText(
+              JSON.stringify({
+                holderName: elems.holderName.value,
+                rollNo: elems.rollNo.value,
+                course: elems.course.value,
+                year: Number(elems.year.value),
+                issuer: issuerAddr,
+              })
+            );
           }
 
-          const id = buildCertId(elems.holderName.value, elems.rollNo.value, elems.course.value, elems.year.value, issuerAddr);
+          const id = buildCertId(
+            elems.holderName.value,
+            elems.rollNo.value,
+            elems.course.value,
+            elems.year.value,
+            issuerAddr
+          );
 
           elems.certId.value = id;
           elems.contentHash.value = cHash;
