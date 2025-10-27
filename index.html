@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Certificate Verification dApp</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="styles.css" rel="stylesheet">
+</head>
+<body>
+  <header class="header">
+    <h1>Certificate Verification dApp</h1>
+    <button id="connectBtn" class="btn">Connect Wallet</button>
+    <span id="accountLabel" class="muted"></span>
+  </header>
+
+  <main class="container">
+    <!-- Admin Panel -->
+    <section class="card">
+      <h2>Admin Panel</h2>
+      <div class="row">
+        <label>Holder Name</label>
+        <input id="a_holderName" placeholder="Sai Raj">
+      </div>
+      <div class="row">
+        <label>Grade</label>
+        <input id="a_rollNo" placeholder="260">
+      </div>
+      <div class="row">
+        <label>Course</label>
+        <input id="a_course" placeholder="B.E. Computer">
+      </div>
+      <div class="row">
+        <label>Year</label>
+        <input id="a_year" type="number" value="2025">
+      </div>
+      <div class="row">
+        <label>Issuer (owner address)</label>
+        <input id="a_issuer" placeholder="0x... (defaults to connected account)">
+      </div>
+      <div class="row">
+        <label>Certificate File</label>
+        <input id="a_file" type="file" accept=".pdf,.png,.jpg,.jpeg,.json,.txt">
+      </div>
+      <div class="row">
+        <label>Or Content Text (used if no file)</label>
+        <textarea id="a_text" placeholder='{"name":"Alice",...}'></textarea>
+      </div>
+      <div class="row">
+        <label>Computed Certificate ID</label>
+        <input id="a_certId" readonly placeholder="Computed after Hash & ID">
+      </div>
+      <div class="row">
+        <label>Computed Content Hash</label>
+        <input id="a_contentHash" readonly placeholder="0x...">
+      </div>
+      <div class="row">
+        <button id="a_compute" class="btn">Compute ID & Hash</button>
+      </div>
+      <div class="row actions">
+        <button id="a_create" class="btn primary">Create</button>
+        <button id="a_update" class="btn"></button>
+        <button id="a_revoke" class="btn warn">Revoke</button>
+        <button id="a_unrevoke" class="btn">Unrevoke</button>
+        <button id="a_delete" class="btn danger">Delete</button>
+      </div>
+      <pre id="a_log" class="log"></pre>
+    </section>
+
+    <!-- User Verify Panel -->
+    <section class="card">
+      <h2>User Verification</h2>
+      <div class="row">
+        <label>Holder Name</label>
+        <input id="u_holderName" placeholder="Sai Raj">
+      </div>
+      <div class="row">
+        <label>Roll No</label>
+        <input id="u_rollNo" placeholder="260">
+      </div>
+      <div class="row">
+        <label>Course</label>
+        <input id="u_course" placeholder="B.E. Computer">
+      </div>
+      <div class="row">
+        <label>Year</label>
+        <input id="u_year" type="number" value="2025">
+      </div>
+      <div class="row">
+        <label>Issuer (owner address)</label>
+        <input id="u_issuer" placeholder="0x...">
+      </div>
+      <div class="row">
+        <label>Certificate File</label>
+        <input id="u_file" type="file" accept=".pdf,.png,.jpg,.jpeg,.json,.txt">
+      </div>
+      <div class="row">
+        <label>Or Content Text (used if no file)</label>
+        <textarea id="u_text" placeholder='{"name":"Alice",...}'></textarea>
+      </div>
+      <div class="row">
+        <button id="u_compute" class="btn">Compute ID & Hash</button>
+      </div>
+      <div class="row">
+        <label>Certificate ID</label>
+        <input id="u_certId" placeholder="0x... (auto if computed)">
+      </div>
+      <div class="row">
+        <label>Content Hash</label>
+        <input id="u_contentHash" placeholder="0x... (auto if computed)">
+      </div>
+      <div class="row">
+        <button id="u_verify" class="btn primary">Verify</button>
+      </div>
+      <div class="row">
+        <span id="u_result" class="badge">Result: —</span>
+      </div>
+      <pre id="u_log" class="log"></pre>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <script src="./app.js"></script>
+  <script src="./tabs.js"></script>
+  
+</body>
+</html>

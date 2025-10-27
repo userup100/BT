@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Certificate Verification dApp - Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* Basic styling */
+    body { font-family: Arial, sans-serif; margin: 1rem; }
+    .btn { padding: 0.5rem 1rem; margin: 0.25rem 0; cursor: pointer; }
+    .primary { background-color: #007bff; color: white; border: none; }
+    .warn { background-color: #dc3545; color: white; border: none; }
+    .danger { background-color: #a71d2a; color: white; border: none; }
+    .log { white-space: pre-wrap; background: #f5f5f5; padding: 1rem; height: 8rem; overflow-y: auto; }
+    label { display: block; margin-top: 0.5rem; }
+    input, textarea { width: 100%; padding: 0.5rem; margin-top: 0.25rem; }
+  </style>
+</head>
+<body>
+  <h1>Admin Panel - Certificate Verification dApp</h1>
+  <button id="connectBtn" class="btn primary">Connect Wallet</button>
+  <span id="accountLabel"></span>
+
+  <hr>
+
+  <label>Holder Name</label>
+  <input id="a_holderName" placeholder="Sai Raj">
+
+  <label>Roll No</label>
+  <input id="a_rollNo" placeholder="260">
+
+  <label>Course</label>
+  <input id="a_course" placeholder="B.E. Computer">
+
+  <label>Year</label>
+  <input id="a_year" type="number" value="2025">
+
+  <label>Issuer (owner address, leave empty for connected account)</label>
+  <input id="a_issuer" placeholder="0x...">
+
+  <label>Certificate File (pdf/png/jpg/json/txt)</label>
+  <input id="a_file" type="file" accept=".pdf,.png,.jpg,.jpeg,.json,.txt">
+
+  <label>Or Content Text (used if no file)</label>
+  <textarea id="a_text" placeholder='{"name":"Alice",...}' rows="5"></textarea>
+
+  <label>Computed Certificate ID</label>
+  <input id="a_certId" readonly placeholder="Computed after Hash & ID">
+
+  <label>Computed Content Hash</label>
+  <input id="a_contentHash" readonly placeholder="0x...">
+
+  <button id="a_compute" class="btn">Compute ID & Hash</button>
+
+  <div>
+    <button id="a_create" class="btn primary">Create</button>
+    <button id="a_update" class="btn"></button>
+    <button id="a_revoke" class="btn warn">Revoke</button>
+    <button id="a_unrevoke" class="btn">Unrevoke</button>
+    <button id="a_delete" class="btn danger">Delete</button>
+  </div>
+
+  <pre id="a_log" class="log"></pre>
+
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <script>
+    (async () => {
+      const { ethers } = window;
+
+      const CONTRACT_ADDRESS = "0xd0d409F68DE81b314612474bf10e0Cf98252e91a";
+      const CONTRACT_ABI = [ /* same ABI as before */ 
+        {
+          "inputs": [
+            { "internalType": "bytes32", "name": "id", "type": "bytes32" },
+            { "internalType": "string", "name": "holderName", "type": "string" },
+            { "internalType": "string", "name": "course", "type": "string" },
+            { "internalType": "uint32", "name": "year", "type": "uint32" },
+            { "internalType": "bytes32", "name": "contentHash", "type": "bytes32" }
+          ],
+          "name": "createCertificate", "outputs": [], "stateMutability": "nonpayable", "type": "function"
+        },
+        {
+          "inputs": [{ "internalType": "bytes32", "name": "id", "type": "bytes32" }],
+          "name": "deleteCertificate", "outputs": [], "stateMutability": "nonpayable", "type": "function"
+        },
+        {
+          "inputs": [
+            { "internalType": "bytes32", "name": "id", "type": "bytes32" },
+            { "internalType": "bool", "name": "status", "type": "bool" }
+          ],
+          "name": "revokeCertificate", "outputs": [], "stateMutability": "nonpayable", "type": "function"
+        },
+        {"inputs": [], "stateMutability": "nonpayable", "type": "constructor"},
+        {
+          "anonymous": false,
+          "inputs": [
+            { "indexed": true, "internalType": "bytes32", "name": "id", "type": "bytes32" },
+            { "indexed": true, "internalType": "address", "name": "issuer", "type": "address" }
+          ],
+          "name": "Created", "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [{ "indexed": true, "internalType": "bytes32", "name": "id", "type": "bytes32" }],
+          "name": "Deleted", "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            { "indexed": true, "internalType": "bytes32", "name": "id", "type": "bytes32" },
+            { "indexed": false, "internalType": "bool", "name": "status", "type": "bool" }
+          ],
+          "name": "Revoked", "type": "event"
+        },
+        {
+          "inputs": [
+            { "internalType": "bytes32", "name": "id", "type": "bytes32" },
+            { "internalType": "string", "name": "holderName", "type": "string" },
+            { "internalType": "string", "name": "course", "type": "string" },
+            { "internalType": "uint32", "name": "year", "type": "uint32" },
+            { "internalType": "bytes32", "name": "contentHash", "type": "bytes32" }
+          ],
+          "name": "updateCertificate", "outputs": [], "stateMutability": "nonpayable", "type": "function"
+        },
+        {
+          "anonymous": false,
+          "inputs": [{ "indexed": true, "internalType": "bytes32", "name": "id", "type": "bytes32" }],
+          "name": "Updated", "type": "event"
+        }
+      ];
+
+      let provider, signer, signerAddress, contractWrite;
+
+      async function ensureProvider() {
+        if (!window.ethereum) throw new Error("MetaMask not found");
+        provider = new ethers.providers.Web3Provider(window.ethereum);
+        signer = provider.getSigner();
+        signerAddress = await signer.getAddress();
+        contractWrite = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+        accountLabel.textContent = `Connected: ${shorten(signerAddress)}`;
+      }
+
+      connectBtn.addEventListener("click", async () => {
+        try {
+          await ensureProvider();
+        } catch (e) {
+          alert("MetaMask is required.");
+        }
+      });
+
+      function shorten(addr) {
+        return addr ? addr.slice(0,6) + "..." + addr.slice(-4) : "";
+      }
+
+      function hashText(text) {
+        const bytes = ethers.utils.toUtf8Bytes(text);
+        return ethers.utils.keccak256(bytes);
+      }
+
+      function buildCertId(holderName, rollNo, course, year, issuer) {
+        return ethers.utils.solidityKeccak256(
+          ["string", "string", "string", "uint32", "address"],
+          [holderName, rollNo, course, Number(year), issuer]
+        );
+      }
+
+      function readFileAsArrayBuffer(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsArrayBuffer(file);
+        });
+      }
+
+      // Admin form elements
+      const elems = {
+        holderName: document.getElementById("a_holderName"),
+        rollNo: document.getElementById("a_rollNo"),
+        course: document.getElementById("a_course"),
+        year: document.getElementById("a_year"),
+        issuer: document.getElementById("a_issuer"),
+        file: document.getElementById("a_file"),
+        text: document.getElementById("a_text"),
+        certId: document.getElementById("a_certId"),
+        contentHash: document.getElementById("a_contentHash"),
+        compute: document.getElementById("a_compute"),
+        create: document.getElementById("a_create"),
+        update: document.getElementById("a_update"),
+        revoke: document.getElementById("a_revoke"),
+        unrevoke: document.getElementById("a_unrevoke"),
+        del: document.getElementById("a_delete"),
+        log: document.getElementById("a_log"),
+      };
+
+      elems.compute.addEventListener("click", async () => {
+        try {
+          const issuerAddr = elems.issuer.value || signerAddress || "";
+
+          let cHash;
+
+          if (elems.file.files.length > 0) {
+            const fileBuffer = await readFileAsArrayBuffer(elems.file.files[0]);
+            cHash = ethers.utils.keccak256(new Uint8Array(fileBuffer));
+          } else if (elems.text.value.trim()) {
+            cHash = hashText(elems.text.value.trim());
+          } else {
+            cHash = hashText(JSON.stringify({
+              holderName: elems.holderName.value,
+              rollNo: elems.rollNo.value,
+              course: elems.course.value,
+              year: Number(elems.year.value),
+              issuer: issuerAddr
+            }));
+          }
+
+          const id = buildCertId(elems.holderName.value, elems.rollNo.value, elems.course.value, elems.year.value, issuerAddr);
+
+          elems.certId.value = id;
+          elems.contentHash.value = cHash;
+          elems.log.textContent = `Computed\nID: ${id}\nContent Hash: ${cHash}`;
+        } catch (e) {
+          elems.log.textContent = `Compute error: ${e.message}`;
+        }
+      });
+
+      elems.create.addEventListener("click", async () => {
+        try {
+          if (!signer) await ensureProvider();
+          const issuerAddr = elems.issuer.value || signerAddress;
+          const id = elems.certId.value || buildCertId(elems.holderName.value, elems.rollNo.value, elems.course.value, elems.year.value, issuerAddr);
+          const cHash = elems.contentHash.value;
+          const tx = await contractWrite.createCertificate(id, elems.holderName.value, elems.course.value, Number(elems.year.value), cHash);
+          elems.log.textContent = `Creating... ${tx.hash}`;
+          await tx.wait();
+          elems.log.textContent = `Created: ${tx.hash}`;
+        } catch (e) {
+          elems.log.textContent = `Create error: ${e.message}`;
+        }
+      });
+
+      elems.update.addEventListener("click", async () => {
+        try {
+          if (!signer) await ensureProvider();
+          const issuerAddr = elems.issuer.value || signerAddress;
+          const id = elems.certId.value || buildCertId(elems.holderName.value, elems.rollNo.value, elems.course.value, elems.year.value, issuerAddr);
+          const cHash = elems.contentHash.value;
+          const tx = await contractWrite.updateCertificate(id, elems.holderName.value, elems.course.value, Number(elems.year.value), cHash);
+          elems.log.textContent = `Updating... ${tx.hash}`;
+          await tx.wait();
+          elems.log.textContent = `Updated: ${tx.hash}`;
+        } catch (e) {
+          elems.log.textContent = `Update error: ${e.message}`;
+        }
+      });
+
+      elems.revoke.addEventListener("click", async () => {
+        try {
+          if (!signer) await ensureProvider();
+          const id = elems.certId.value;
+          const tx = await contractWrite.revokeCertificate(id, true);
+          elems.log.textContent = `Revoking... ${tx.hash}`;
+          await tx.wait();
+          elems.log.textContent = `Revoked: ${tx.hash}`;
+        } catch (e) {
+          elems.log.textContent = `Revoke error: ${e.message}`;
+        }
+      });
+
+      elems.unrevoke.addEventListener("click", async () => {
+        try {
+          if (!signer) await ensureProvider();
+          const id = elems.certId.value;
+          const tx = await contractWrite.revokeCertificate(id, false);
+          elems.log.textContent = `Unrevoking... ${tx.hash}`;
+          await tx.wait();
+          elems.log.textContent = `Unrevoked: ${tx.hash}`;
+        } catch (e) {
+          elems.log.textContent = `Unrevoke error: ${e.message}`;
+        }
+      });
+
+      elems.del.addEventListener("click", async () => {
+        try {
+          if (!signer) await ensureProvider();
+          const id = elems.certId.value;
+          const tx = await contractWrite.deleteCertificate(id);
+          elems.log.textContent = `Deleting... ${tx.hash}`;
+          await tx.wait();
+          elems.log.textContent = `Deleted: ${tx.hash}`;
+        } catch (e) {
+          elems.log.textContent = `Delete error: ${e.message}`;
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
